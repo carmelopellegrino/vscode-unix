@@ -34,16 +34,16 @@ def setup_vscode() -> Dict[str, Any]:
     executable = os.getenv("CODE_EXECUTABLE", "code-server")
     icon = "code-server.svg" if executable == "code-server" else "vscode.svg"
 
+    path = f'/tmp/vscode_sockets_{os.getuid()}'
+
+    try:
+        os.mkdir(path, mode = 0o700)
+    except FileExistsError:
+        os.chmod(path, 0o700)
+
+    socket_path = f'{path}/code-server'
+
     def command() -> List[str]:
-        path = '/tmp/vscode_sockets_{os.getuid()}'
-
-        try:
-            os.mkdir(path, mode = 0o700)
-        except FileExistsError:
-            os.chmod(path, 0o700)
-
-        socket_path = f'{path}/code-server'
-
         return vscode_cmd(executable, socket_path),
 
     return {
