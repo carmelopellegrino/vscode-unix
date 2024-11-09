@@ -42,7 +42,7 @@ def setup_vscode() -> Dict[str, Any]:
     socket_path = f'{path}/code-server'
 
     def command() -> List[str]:
-        return vscode_cmd(executable, socket_path),
+        return vscode_cmd(executable, socket_path)
 
     return {
         "command": command,
