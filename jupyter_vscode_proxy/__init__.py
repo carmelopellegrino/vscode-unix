@@ -7,21 +7,19 @@ def vscode_cmd(executable: str, socket_path: str) -> List[str]:
         if not shutil.which(executable):
             raise FileNotFoundError(f"Can not find {executable}")
 
-    get_inner_cmd = [
+    cmd = [
         executable,
         "--auth", "none",
         "--disable-telemetry",
-        "--without-connection-token",
     ]
 
     working_dir = os.getenv("CODE_WORKINGDIR", ".")
 
     extensions_dir = os.getenv("CODE_EXTENSIONSDIR", None)
 
-    cmd = get_inner_cmd()
-
     # --socket-path <path>           The path to a socket file for the server to listen to.
-    cmd.append("--socket-path=" + socket_path)
+    cmd.append("--socket=" + socket_path)
+    cmd.append("--socket-mode=700")
 
     if extensions_dir:
         cmd += ["--extensions-dir", extensions_dir]
