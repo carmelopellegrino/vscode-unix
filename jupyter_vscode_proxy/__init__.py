@@ -30,7 +30,7 @@ def vscode_cmd(executable: str, socket_path: str) -> List[str]:
 
 def setup_vscode() -> Dict[str, Any]:
     executable = os.getenv("CODE_EXECUTABLE", "code-server")
-    icon = "code-server.svg" if executable == "code-server" else "vscode.svg"
+    icon = "vscode.svg"
 
     path = f'/tmp/vscode_sockets_{os.getuid()}'
 
