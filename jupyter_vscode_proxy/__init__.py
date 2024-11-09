@@ -1,9 +1,11 @@
 import os
+import shutil
 from typing import Any, Dict, List
 
 def vscode_cmd(executable: str, socket_path: str) -> List[str]:
     if not os.path.isfile(executable):
-        raise FileNotFoundError(f"Can not find {executable}")
+        if not shutil.which(executable):
+            raise FileNotFoundError(f"Can not find {executable}")
 
     get_inner_cmd = [
         executable,
