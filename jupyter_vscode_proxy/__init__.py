@@ -1,70 +1,50 @@
 import os
-import shutil
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
+def vscode_cmd(executable: str, socket_path: str) -> List[str]:
+    if not os.path.isfile(executable):
+        raise FileNotFoundError(f"Can not find {executable}")
 
-def _get_inner_vscode_cmd() -> List[str]:
-    return [
-        "code-server",
-        "--auth",
-        "none",
+    get_inner_cmd = [
+        executable,
+        "--auth", "none",
         "--disable-telemetry",
-    ]
-
-
-def _get_inner_openvscode_cmd() -> List[str]:
-    return [
-        "openvscode-server",
         "--without-connection-token",
-        "--telemetry-level",
-        "off",
     ]
 
+    working_dir = os.getenv("CODE_WORKINGDIR", ".")
 
-_CODE_EXECUTABLE_INNER_CMD_MAP: Dict[str, Callable] = {
-    "code-server": _get_inner_vscode_cmd,
-    "openvscode-server": _get_inner_openvscode_cmd,
-}
+    extensions_dir = os.getenv("CODE_EXTENSIONSDIR", None)
 
+    cmd = get_inner_cmd()
 
-def _get_cmd_factory(executable: str) -> Callable:
-    if executable not in _CODE_EXECUTABLE_INNER_CMD_MAP:
-        raise KeyError(
-            f"'{executable}' is not one of {_CODE_EXECUTABLE_INNER_CMD_MAP.keys()}."
-        )
+    # --socket-path <path>           The path to a socket file for the server to listen to.
+    cmd.append("--socket-path=" + socket_path)
 
-    get_inner_cmd = _CODE_EXECUTABLE_INNER_CMD_MAP[executable]
+    if extensions_dir:
+        cmd += ["--extensions-dir", extensions_dir]
 
-    def _get_cmd(port: int) -> List[str]:
-        if not shutil.which(executable):
-            raise FileNotFoundError(f"Can not find {executable} in PATH")
-
-        # Start vscode in CODE_WORKINGDIR env variable if set
-        # If not, start in 'current directory', which is $REPO_DIR in mybinder
-        # but /home/jovyan (or equivalent) in JupyterHubs
-        working_dir = os.getenv("CODE_WORKINGDIR", ".")
-
-        extensions_dir = os.getenv("CODE_EXTENSIONSDIR", None)
-
-        cmd = get_inner_cmd()
-
-        cmd.append("--port=" + str(port))
-
-        if extensions_dir:
-            cmd += ["--extensions-dir", extensions_dir]
-
-        cmd.append(working_dir)
-        return cmd
-
-    return _get_cmd
+    cmd.append(working_dir)
+    return cmd
 
 
 def setup_vscode() -> Dict[str, Any]:
-    executable = os.environ.get("CODE_EXECUTABLE", "code-server")
+    executable = os.getenv("CODE_EXECUTABLE", "code-server")
     icon = "code-server.svg" if executable == "code-server" else "vscode.svg"
+
+    path = '/tmp/vscode_sockets_{os.getuid()}'
+
+    try:
+        os.mkdir(path, mode = 0o700)
+    except FileExistsError:
+        os.chmod(path, 0o700)
+
+    socket_path = f'{path}/code-server'
+
     return {
-        "command": _get_cmd_factory(executable),
+        "command": vscode_cmd(executable, socket_path),
         "timeout": 300,
+        "unix_socket": socket_path,
         "new_browser_tab": True,
         "launcher_entry": {
             "title": "VS Code",
